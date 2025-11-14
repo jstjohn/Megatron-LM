@@ -164,13 +164,18 @@ def clip_grad_by_total_norm_fp32(
                 grads.append(to_local_if_dtensor(param.decoupled_grad).detach())
         else:
             if param.grad is not None:
-                assert param.grad.type() == 'torch.cuda.FloatTensor'
+                assert param.grad.type() == 'torch.cuda.FloatTensor', f"param.grad.type() is {param.grad.type()}"
                 params.append(param)
                 grads.append(to_local_if_dtensor(param.grad).detach())
 
     # Scale.
     clip_coeff = max_norm / (total_norm + 1.0e-6)
     if clip_coeff < 1.0:
+        if len(grads) == 0:
+            raise ValueError(
+                f"No gradients were found to clip out of {len(parameters)} parameters. "
+                "This should not happen, please debug and report the issue."
+            )
         dummy_overflow_buf = torch.zeros(1, dtype=torch.int, device='cuda')
         multi_tensor_applier(
             multi_tensor_scale_impl, dummy_overflow_buf, [grads, grads], clip_coeff

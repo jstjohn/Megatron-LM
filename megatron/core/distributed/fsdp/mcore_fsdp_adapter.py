@@ -94,7 +94,8 @@ class FullyShardedDataParallel(_BaseDataParallel):
             self.fsdp_unit_modules = fsdp_unit_modules
         else:
             if self.ddp_config.data_parallel_sharding_strategy == "optim_grads_params":
-                self.fsdp_unit_modules = [TransformerLayer]
+                from nemo.collections.llm.gpt.model.megatron.hyena.hyena_layer import HyenaLayer
+                self.fsdp_unit_modules = [TransformerLayer, HyenaLayer]
             else:
                 self.fsdp_unit_modules = []
 
@@ -114,6 +115,7 @@ class FullyShardedDataParallel(_BaseDataParallel):
             ),
         )
         self.param_and_grad_buffer = self.module.param_and_grad_buffer
+        setattr(self.param_and_grad_buffer, "use_precision_aware_optimizer", True)
         self.no_sync = self.module.no_sync
         self.start_param_sync = self.module.start_param_sync
         self.start_grad_sync = self.module.start_grad_sync
