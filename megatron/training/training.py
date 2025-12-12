@@ -961,6 +961,8 @@ def get_model(model_provider_func, model_type=ModelType.encoder_or_decoder, wrap
         return model
     # Setup stream for model building/ddp initialization
     setup_stream = torch.cuda.Stream()
+    # Wait for the default stream to complete before starting setup_stream
+    setup_stream.wait_stream(torch.cuda.current_stream())
     # Make setup_stream start after whatever the default stream already queued
     with torch.cuda.stream(setup_stream):
         if args.init_model_with_meta_device:
